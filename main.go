@@ -2,9 +2,11 @@ package main
 
 import (
 	"net/http"
+	"github.com/julienschmidt/httprouter"
 )
 
 func main() {
-	http.HandleFunc("/", home)
-	http.ListenAndServe(":8000", nil)
+	router := httprouter.New()
+	router.GET("/", home)
+	http.ListenAndServe(":8000", router)
 }
