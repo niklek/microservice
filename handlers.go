@@ -1,11 +1,11 @@
 package main
 
 import (
-	"net/http"
 	"fmt"
 	"github.com/julienschmidt/httprouter"
+	"net/http"
 )
 
 func home(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Fprintf(w, "Request path:%s", r.URL.Path)
+	fmt.Fprintf(w, "Request path:%s\n", r.URL.Path)
 }
