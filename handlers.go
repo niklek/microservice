@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/julienschmidt/httprouter"
-	"net/http"
 	"github.com/sirupsen/logrus"
+	"net/http"
 )
 
 func home(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

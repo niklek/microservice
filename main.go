@@ -2,8 +2,9 @@ package main
 
 import (
 	"github.com/julienschmidt/httprouter"
-	"net/http"
 	"github.com/sirupsen/logrus"
+	"net/http"
+	"os"
 )
 
 var log = logrus.New()
@@ -12,9 +13,17 @@ func main() {
 	log.SetFormatter(&logrus.JSONFormatter{})
 	log.Info("Starting service...")
 
+	log.Info("Reading configuration...")
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("PORT is not set")
+	}
+
 	router := httprouter.New()
 	router.GET("/", home)
-	err := http.ListenAndServe(":8000", router)
+
+	log.Info("Service is ready to listen")
+	err := http.ListenAndServe(":"+port, router)
 	if err != nil {
 		log.Fatal("Can not start the service:", err)
 	}
