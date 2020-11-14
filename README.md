@@ -1,7 +1,9 @@
 # microservice
-Basic setup for HTTP service
+Setup for a HTTP service
 
 ## features
 
-- Simple HTTP API
+- Simple HTTP API, basic handler tests
 - Makefile
+- Httprouter
+- Structured logging
