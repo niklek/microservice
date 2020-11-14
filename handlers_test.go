@@ -8,9 +8,11 @@ import (
 	"testing"
 )
 
+// Test home path response
 func TestHandlerHome(t *testing.T) {
 	path := "/"
-	respCodeExpected := 200
+	respCodeExpected := http.StatusOK
+	bodyExpected := "Request path:" + path + "\n"
 
 	router := httprouter.New()
 	router.GET(path, home)
@@ -36,7 +38,6 @@ func TestHandlerHome(t *testing.T) {
 		)
 	}
 
-	bodyExpected := "Request path:" + path + "\n"
 	if string(body) != bodyExpected {
 		t.Fatalf(
 			"Response body:%s, expected:%s",
