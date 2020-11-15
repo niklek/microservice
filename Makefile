@@ -47,7 +47,7 @@ vet:
 	@echo "+ $@"
 	@go vet $(shell go list ${PROJECT}/...)
 
-test: clean fmt lint vet
+test: clean fmt vet
 	@echo "Run tests..."
 	@go test --race ./...
 
