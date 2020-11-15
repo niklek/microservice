@@ -4,6 +4,8 @@ Setup for a HTTP service
 ## features
 
 - Simple HTTP API, basic handler tests
-- Makefile
 - Httprouter
-- Structured logging
+- Makefile
+- Dockerfile
+- Structured logging: using logrus
+- Versioning: service has version, commit and build time
