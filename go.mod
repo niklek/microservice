@@ -1,4 +1,4 @@
-module miscoservice
+module github.com/niklek/microservice
 
 go 1.15
 

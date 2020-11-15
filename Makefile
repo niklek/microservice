@@ -11,32 +11,51 @@ BUILD_TIME?=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
 
 help:
 	@echo "Makefile commands:"
-	@echo "build"
 	@echo "run"
 	@echo "test"
 
 build: clean
-	@echo "Building..."
+	@echo "Building for ${GOOS}/${GOARCH}..."
 	#@go build -o ${APP} *.go
 	GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=0 \
 	go build \
 		-ldflags "-s -w -X ${PROJECT}/internal/version.Version=${VERSION} \
 		-X ${PROJECT}/internal/version.Commit=${COMMIT} \
 		-X ${PROJECT}/internal/version.BuildTime=${BUILD_TIME}" \
-		-o bin/${APP} ${PROJECT}/*.go
+		-o bin/${APP} ${PROJECT}
 
 container: build
-	docker build --build-arg PORT=${PORT} --build-arg APP=${APP} -t ${APP}:${VERSION} .
+	@sed                            \
+	    -e 's|{GOOS}|$(GOOS)|g'     \
+	    -e 's|{GOARCH}|$(GOARCH)|g' \
+	    -e 's|{APP}|$(APP)|g'       \
+	    -e 's|{PORT}|$(PORT)|g' 	\
+	    Dockerfile.in > .dockerfile-$(APP)-$(GOOS)_$(GOARCH)
+	@docker build -t ${APP}_v${VERSION} -f .dockerfile-$(APP)-$(GOOS)_$(GOARCH) .
 
 run: container
-	docker run --name ${APP}:${VERSION} -p ${PORT}:${PORT} \
-		-e "PORT=${PORT}" \
-		-d ${APP}:${VERSION}
+	docker stop ${APP}_v${VERSION} || true && docker rm ${APP}_v${VERSION} || true
+	docker run --name ${APP}_v${VERSION} -p ${PORT}:${PORT} \
+		-e PORT=${PORT} -e APP=${APP} \
+		-d ${APP}_v${VERSION}
 
-test:
+fmt:
+	@echo "+ $@"
+	@go list -f '{{if len .TestGoFiles}}"gofmt -s -l {{.Dir}}"{{end}}' $(shell go list ${PROJECT}/...) | xargs -L 1 sh -c
+
+vet:
+	@echo "+ $@"
+	@go vet $(shell go list ${PROJECT}/...)
+
+test: clean fmt lint vet
 	@echo "Run tests..."
 	@go test --race ./...
+
+cover:
+	@echo "+ $@"
+	@go list -f '{{if len .TestGoFiles}}"go test -coverprofile={{.Dir}}/.coverprofile {{.ImportPath}}"{{end}}' $(shell go list ${PROJECT}/...) | xargs -L 1 sh -c
 
 clean:
 	@echo "Cleaning"
 	@go clean
+	@rm -rf .dockerfile-*

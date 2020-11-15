@@ -11,9 +11,10 @@ import (
 // Home handler
 func home(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	log.WithFields(logrus.Fields{
-		"path":    r.URL.Path,
-		"version": version.Version,
-		"commit":  version.Commit,
+		"path":      r.URL.Path,
+		"version":   version.Version,
+		"commit":    version.Commit,
+		"buildTime": version.BuildTime,
 	}).Info("Requested home")
 	fmt.Fprintf(w, "Request path:%s\n", r.URL.Path)
 }
