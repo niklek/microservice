@@ -5,9 +5,13 @@ import (
 	"github.com/niklek/microservice/internal/version"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"net"
 	"os"
 	"time"
 	"sync/atomic"
+	"os/signal"
+	"syscall"
+	"context"
 )
 
 var log = logrus.New()
@@ -25,6 +29,12 @@ func main() {
 	if port == "" {
 		log.Fatal("PORT is not set")
 	}
+
+	// channels for graceful shutdown
+	interrupt := make(chan os.Signal, 1)
+	shutdown := make(chan error, 1)
+	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(interrupt)
 
 	router := httprouter.New()
 	router.GET("/", home)
@@ -48,9 +58,28 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	log.Info("Service is ready to listen")
-	err := http.ListenAndServe(":"+port, router)
-	if err != nil {
-		log.Fatal("Can not start the service:", err)
+	server := http.Server{
+		Addr:    net.JoinHostPort("", port),
+		Handler: router,
 	}
+	log.Info("Service is ready to listen")
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			shutdown <- err
+		}
+	}()
+
+	// Lister for interruption and gracefully stop the server
+	select {
+	case x := <-interrupt:
+		log.Info("Received signal", x.String())
+	case err := <-shutdown:
+		log.Error("Received an error from server", err)
+	}
+	log.Info("Stopping the service...")
+	timeout, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+	server.Shutdown(timeout)
+	log.Info("The Stopping the service...")
 }
