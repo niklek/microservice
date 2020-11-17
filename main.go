@@ -40,24 +40,17 @@ func main() {
 	// routers
 	router := httprouter.New()
 	router.GET("/", home)
-	// liveness probe
-	router.GET("/health/live", func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-		w.WriteHeader(http.StatusOK)
-	})
-	// readiness probe
+	router.GET("/health/live", healthLive)
+	// a flag to indicate when the service is ready
 	isReady := &atomic.Value{}
 	isReady.Store(false)
 	go func() {
-		// TODO prepare service
+		// TODO prepare the service
 		time.Sleep(5 * time.Second)
 		isReady.Store(true)
 	}()
-	router.GET("/health/ready", func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-		if isReady == nil || !isReady.Load().(bool) {
-			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
+	router.GET("/health/ready", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		healthReady(w, r, p, isReady)
 	})
 
 	// server
