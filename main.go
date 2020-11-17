@@ -1,17 +1,18 @@
 package main
 
 import (
+	"context"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"sync/atomic"
+	"syscall"
+	"time"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/niklek/microservice/internal/version"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"net"
-	"os"
-	"time"
-	"sync/atomic"
-	"os/signal"
-	"syscall"
-	"context"
 )
 
 var log = logrus.New()
@@ -36,6 +37,7 @@ func main() {
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(interrupt)
 
+	// routers
 	router := httprouter.New()
 	router.GET("/", home)
 	// liveness probe
@@ -58,6 +60,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	// server
 	server := http.Server{
 		Addr:    net.JoinHostPort("", port),
 		Handler: router,
@@ -65,7 +68,7 @@ func main() {
 	log.Info("Service is ready to listen")
 	go func() {
 		err := server.ListenAndServe()
-		if err != nil {
+		if err != nil && err != http.ErrServerClosed {
 			shutdown <- err
 		}
 	}()
@@ -80,6 +83,9 @@ func main() {
 	log.Info("Stopping the service...")
 	timeout, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
-	server.Shutdown(timeout)
-	log.Info("The Stopping the service...")
+	err := server.Shutdown(timeout)
+	if err != nil {
+		log.Error("Shutdown error", err)
+	}
+	log.Info("The service is stopped")
 }
