@@ -24,13 +24,18 @@ func healthReady(w http.ResponseWriter, _ *http.Request, _ httprouter.Params, is
 	w.WriteHeader(http.StatusOK)
 }
 
-// Home handler
-func home(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+// Custom not found
+func notFound(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(logrus.Fields{
 		"path":      r.URL.Path,
 		"version":   version.Version,
 		"commit":    version.Commit,
 		"buildTime": version.BuildTime,
-	}).Info("Requested home")
+	}).Info("Requested unknown path")
+	w.WriteHeader(http.StatusNotFound)
+}
+
+// Home handler
+func home(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprintf(w, "Request path:%s\n", r.URL.Path)
 }

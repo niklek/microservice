@@ -39,8 +39,8 @@ func main() {
 
 	// routers
 	router := httprouter.New()
-	router.GET("/", home)
-	router.GET("/health/live", healthLive)
+	router.GET("/", accessLogMiddleware(home))
+	router.GET("/health/live", accessLogMiddleware(healthLive))
 	// a flag to indicate when the service is ready
 	isReady := &atomic.Value{}
 	isReady.Store(false)
@@ -52,6 +52,7 @@ func main() {
 	router.GET("/health/ready", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		healthReady(w, r, p, isReady)
 	})
+	router.NotFound = http.HandlerFunc(notFound)
 
 	// server
 	server := http.Server{
@@ -81,4 +82,17 @@ func main() {
 		log.Error("Shutdown error", err)
 	}
 	log.Info("The service is stopped")
+}
+
+// middleware to log requests
+func accessLogMiddleware(next httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		log.WithFields(logrus.Fields{
+			"path":      r.URL.Path,
+			"version":   version.Version,
+			"commit":    version.Commit,
+			"buildTime": version.BuildTime,
+		}).Info("Requested")
+		next(w, r, ps)
+	}
 }
