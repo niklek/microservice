@@ -59,3 +59,11 @@ clean:
 	@echo "Cleaning"
 	@go clean
 	@rm -rf .dockerfile-*
+
+runloc:
+	go build \
+		-ldflags "-s -w -X ${PROJECT}/internal/version.Version=${VERSION} \
+		-X ${PROJECT}/internal/version.Commit=${COMMIT} \
+		-X ${PROJECT}/internal/version.BuildTime=${BUILD_TIME}" \
+		-o bin/${APP} ${PROJECT}
+	PORT=${PORT} bin/${APP}
