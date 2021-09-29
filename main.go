@@ -12,6 +12,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/niklek/microservice/internal/version"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
 
@@ -52,6 +53,7 @@ func main() {
 	router.GET("/health/ready", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		healthReady(w, r, p, isReady)
 	})
+	router.GET("/metrics", promhttp.Handler())
 	router.NotFound = http.HandlerFunc(notFound)
 
 	// server
